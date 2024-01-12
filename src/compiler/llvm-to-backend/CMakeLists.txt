@@ -27,11 +27,44 @@ function(create_llvm_based_library)
     ${LLVM_TO_BACKEND_INCLUDE_DIRS})
   
   target_compile_definitions(${target} PRIVATE ${LLVM_DEFINITIONS} -DHIPSYCL_COMPILER_COMPONENT)
+
   find_library(LLVM_LIBRARY NAMES LLVM HINTS ${LLVM_LIBRARY_DIRS})
   if(NOT LLVM_LIBRARY)
-    message(FATAL_ERROR "LLVM at ${LLVM_DIR} does not have libLLVM.so. Please disable SSCP and related backends (-DWITH_SSCP_COMPILER=OFF -DWITH_OPENCL_BACKEND=OFF -DWITH_LEVEL_ZERO_BACKEND=OFF) or choose another LLVM installation")
+    find_library(LLVM_CORE_LIBRARY NAMES LLVMCore HINTS ${LLVM_LIBRARY_DIRS})
+    find_library(LLVM_SUPPORT_LIBRARY NAMES LLVMSupport HINTS ${LLVM_LIBRARY_DIRS})
+    find_library(LLVM_IRREADER_LIBRARY NAMES LLVMIRReader HINTS ${LLVM_LIBRARY_DIRS})
+    find_library(LLVM_PASSES_LIBRARY NAMES LLVMPasses HINTS ${LLVM_LIBRARY_DIRS})
+
+    if(NOT LLVM_CORE_LIBRARY OR NOT LLVM_SUPPORT_LIBRARY OR NOT LLVM_IRREADER_LIBRARY OR
+       NOT LLVM_PASSES_LIBRARY)
+      message(FATAL_ERROR "LLVM at ${LLVM_DIR} does not have shared libraries \
+                           (libLLVM.so or all of these: libLLVMCore.so, libLLVMSupport.so, \
+                           libLLVMIRReader.so, libLLVMPasses.so). \
+                           Please disable SSCP and related backends (-DWITH_SSCP_COMPILER=OFF \
+                           -DWITH_OPENCL_BACKEND=OFF -DWITH_LEVEL_ZERO_BACKEND=OFF) or \
+                           choose another LLVM installation")
+    endif()
+
+    get_target_property(LLVM_CORE_TYPE LLVMCore TYPE)
+    get_target_property(LLVM_SUPPORT_TYPE LLVMSupport TYPE)
+    get_target_property(LLVM_IRREADER_TYPE LLVMIRReader TYPE)
+    get_target_property(LLVM_PASSES_TYPE LLVMPasses TYPE)
+
+    if(LLVM_CORE_TYPE STREQUAL STATIC_LIBRARY OR LLVM_SUPPORT_TYPE STREQUAL STATIC_LIBRARY OR
+       LLVM_IRREADER_TYPE STREQUAL STATIC_LIBRARY OR LLVM_PASSES_TYPE STREQUAL STATIC_LIBRARY)
+      message(FATAL_ERROR "LLVM at ${LLVM_DIR} does not have shared libraries \
+                           (libLLVM.so or all of these: libLLVMCore.so, libLLVMSupport.so, \
+                           libLLVMIRReader.so, libLLVMPasses.so). \
+                           Please disable SSCP and related backends (-DWITH_SSCP_COMPILER=OFF \
+                           -DWITH_OPENCL_BACKEND=OFF -DWITH_LEVEL_ZERO_BACKEND=OFF) or \
+                           choose another LLVM installation")
+    endif()
+
+    llvm_config(${target} core support irreader passes)
+  else()
+    llvm_config(${target} USE_SHARED core support irreader passes)
   endif()
-  llvm_config(${target} USE_SHARED core support irreader passes)
+
   # We need symbolic functions for stdpar
   target_link_libraries(${target} PRIVATE ${HIPSYCL_STDPAR_RT_LINKER_FLAGS})
 
