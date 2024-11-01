@@ -1,30 +1,13 @@
 /*
- * This file is part of hipSYCL, a SYCL implementation based on CUDA/HIP
+ * This file is part of AdaptiveCpp, an implementation of SYCL and C++ standard
+ * parallelism for CPUs and GPUs.
  *
- * Copyright (c) 2023 Aksel Alpay
- * All rights reserved.
+ * Copyright The AdaptiveCpp Contributors
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * AdaptiveCpp is released under the BSD 2-Clause "Simplified" License.
+ * See file LICENSE in the project root for full license details.
  */
-
+// SPDX-License-Identifier: BSD-2-Clause
 #ifndef HIPSYCL_ALLOCATION_MAP_HPP
 #define HIPSYCL_ALLOCATION_MAP_HPP
 
@@ -121,7 +104,7 @@ public:
 
   // Access entry of allocation that has the given address. Unlike get_entry(),
   // this does not succeed if the address does not point to the base of the allocation.
-  value_type* get_entry_of_root_address(uint64_t address, uint64_t& root_address) noexcept {
+  value_type* get_entry_of_root_address(uint64_t address) noexcept {
     insert_or_get_entry_lock lock{_num_in_progress_operations};
     return get_entry_of_root_address(_root, address);
   }
@@ -202,7 +185,7 @@ private:
   };
 
   value_type *get_entry(leaf_node &current_node, uint64_t address,
-                        int &num_leaf_attempts,
+                        int &/*num_leaf_attempts*/,
                         uint64_t &root_address) noexcept {
     int start_address = 0;
 
@@ -634,7 +617,7 @@ private:
   }
 
   int find_lowest_level_with_free_blocks(int min_level) {
-    for(int i = min_level; i < _sorted_free_blocks_in_level.size(); ++i) {
+    for(std::size_t i = min_level; i < _sorted_free_blocks_in_level.size(); ++i) {
       if(!_sorted_free_blocks_in_level[i].empty())
         return i;
     }

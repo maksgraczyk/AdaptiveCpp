@@ -1,30 +1,13 @@
 /*
- * This file is part of hipSYCL, a SYCL implementation based on CUDA/HIP
+ * This file is part of AdaptiveCpp, an implementation of SYCL and C++ standard
+ * parallelism for CPUs and GPUs.
  *
- * Copyright (c) 2020 Aksel Alpay
- * All rights reserved.
+ * Copyright The AdaptiveCpp Contributors
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * AdaptiveCpp is released under the BSD 2-Clause "Simplified" License.
+ * See file LICENSE in the project root for full license details.
  */
-
+// SPDX-License-Identifier: BSD-2-Clause
 #ifndef HIPSYCL_RT_SETTINGS_HPP
 #define HIPSYCL_RT_SETTINGS_HPP
 
@@ -119,7 +102,12 @@ enum class setting {
   sscp_failed_ir_dump_directory,
   gc_trigger_batch_size,
   ocl_no_shared_context,
-  ocl_show_all_devices
+  ocl_show_all_devices,
+  no_jit_cache_population,
+  adaptivity_level,
+  jitopt_iads_relative_threshold,
+  jitopt_iads_relative_eviction_threshold,
+  jitopt_iads_relative_threshold_min_data
 };
 
 template <setting S> struct setting_trait {};
@@ -151,6 +139,13 @@ HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::sscp_failed_ir_dump_directory,
 HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::gc_trigger_batch_size, "rt_gc_trigger_batch_size", std::size_t)
 HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::ocl_no_shared_context, "rt_ocl_no_shared_context", bool)
 HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::ocl_show_all_devices, "rt_ocl_show_all_devices", bool)
+HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::no_jit_cache_population, "rt_no_jit_cache_population", bool)
+HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::adaptivity_level, "adaptivity_level", int)
+HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::jitopt_iads_relative_threshold, "jitopt_iads_relative_threshold", double)
+HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::jitopt_iads_relative_eviction_threshold, "jitopt_iads_relative_eviction_threshold", double)
+HIPSYCL_RT_MAKE_SETTING_TRAIT(setting::jitopt_iads_relative_threshold_min_data,
+                              "jitopt_iads_relative_threshold_min_data",
+                              std::size_t)
 
 class settings
 {
@@ -185,6 +180,16 @@ public:
       return _ocl_no_shared_context;
     } else if constexpr(S == setting::ocl_show_all_devices) {
       return _ocl_show_all_devices;
+    } else if constexpr(S == setting::no_jit_cache_population) {
+      return _no_jit_cache_population;
+    } else if constexpr(S == setting::adaptivity_level) {
+      return _adaptivity_level;
+    } else if constexpr(S == setting::jitopt_iads_relative_threshold) {
+      return _jitopt_iads_relative_threshold;
+    } else if constexpr(S == setting::jitopt_iads_relative_threshold_min_data) {
+      return _jitopt_iads_relative_threshold_min_data;
+    } else if constexpr(S == setting::jitopt_iads_relative_eviction_threshold) {
+      return _jitopt_iads_relative_eviction_threshold;
     }
     return typename setting_trait<S>::type{};
   }
@@ -226,6 +231,17 @@ public:
         get_environment_variable_or_default<setting::ocl_no_shared_context>(false);
     _ocl_show_all_devices =
         get_environment_variable_or_default<setting::ocl_show_all_devices>(false);
+    _no_jit_cache_population =
+        get_environment_variable_or_default<setting::no_jit_cache_population>(false);
+    _adaptivity_level =
+        get_environment_variable_or_default<setting::adaptivity_level>(1);
+    
+    _jitopt_iads_relative_threshold =
+        get_environment_variable_or_default<setting::jitopt_iads_relative_threshold>(0.8);
+    _jitopt_iads_relative_eviction_threshold =
+        get_environment_variable_or_default<setting::jitopt_iads_relative_eviction_threshold>(0.1);
+    _jitopt_iads_relative_threshold_min_data =
+        get_environment_variable_or_default<setting::jitopt_iads_relative_threshold_min_data>(1024);
   }
 
 private:
@@ -252,6 +268,11 @@ private:
   visibility_mask_t _visibility_mask;
   bool _ocl_no_shared_context;
   bool _ocl_show_all_devices;
+  bool _no_jit_cache_population;
+  int _adaptivity_level;
+  double _jitopt_iads_relative_threshold;
+  double _jitopt_iads_relative_eviction_threshold;
+  std::size_t _jitopt_iads_relative_threshold_min_data;
 };
 
 }
